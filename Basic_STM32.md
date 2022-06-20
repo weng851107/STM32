@@ -2,7 +2,7 @@
 
 # 目錄
 
-- [Note](#0)
+- [Reference](#0)
 - [初識STM32](#1)
   - [STM32與Arduino的差異](#1.1)
     - [單晶片](#1.1.1)
@@ -50,13 +50,40 @@
   - [計時器 TIMER](#13.1)
   - [計數器 counter](#13.2)
   - [PSC & ARR讓你的時鐘可快可慢](#13.3)
+  - [上數(count-up)、下數(count-down)、中心對齊(center-aligned)](#13.4)
+- [STM32輾壓Arduino的功能—TIM(下)](#14)
+  - [TIMER+NVIC中斷](#14.1)
+  - [小程式1-實作Counter](#14.2)
+  - [小程式2-實作HAL_Delay微秒級版本](#14.3)
+- [Counter的硬體實現](#15)
+  - [邏輯閘](#15.1)
+  - [循序邏輯電路，門閂(latch)](#15.2)
+  - [正反器(flip-flop)](#15.3)
+  - [counter的電路設計圖](#15.4)
+- [STM32系統時鐘配置(上)](#16)
+- [STM32系統時鐘配置(下)](#17)
+- [PWM輸出-模擬類比訊號](#18)
+  - [PWM-脈衝寬度調變](#18.1)
+  - [如何描述一個方波](#18.2)
+  - [PWM輸出-設定](#18.3)
+- [Servo控制-By PWM輸出](#19)
+  - [Servo](#19.1)
+  - [用STM32控制Servo](#19.2)
+- [客製化的PWM輸出](#20)
+  - [輸出10個波後停止輸出](#20.1)
+  - [duty cycle遞增的10個波](#20.2)
+- [旋轉編碼器—Encoder](#21)
+  - [STM32 Encoder mode](#21.1)
+- [TIM的強大功能—Encoder mode](22)
+- [TIM-輸入捕獲](#23)
+- [STM32實際應用1—馬達精準控速(PID初淺教學(上))](#24)
+  - [PID是什麼?](#24.1)
+  - [控制方法](#24.2)
+- [STM32實際應用1—馬達精準控速(PID初淺教學(下))](#25)
+- [STM32實際應用2—DMA讓你的步進馬達不再失步](#26)
+- [STM32系列最終章!](#27)
 
-
-
-
-
-
-<h1 id="0">Note</h1>
+<h1 id="0">Reference</h1>
 
 - https://ithelp.ithome.com.tw/users/20141525/ironman/4839
 
@@ -91,11 +118,11 @@
 
 - STM32F429ZI 開發版
 
-    ![STM32_img00](./doc/初識STM32/STM32_img00.jpg)
+    ![STM32_img00](./doc/Basic_STM32/初識STM32/STM32_img00.jpg)
 
 - 命名表
 
-    ![STM32_img01](./doc/初識STM32/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/初識STM32/STM32_img01.jpg)
 
   - Code size - 快閃記憶體(Flash memory)大小
 
@@ -117,25 +144,25 @@
 
 - 開啟STM32CubeIDE，點擊左上角開啟新的STM32專案
 
-    ![STM32_img00](./doc/STM32CubeIDE安裝/STM32_img00.jpg)
+    ![STM32_img00](./doc/Basic_STM32/STM32CubeIDE安裝/STM32_img00.jpg)
 
 - 搜尋使用的開發版
 
-    ![STM32_img01](./doc/STM32CubeIDE安裝/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/STM32CubeIDE安裝/STM32_img01.jpg)
 
 - 設定你的專案名稱
 
-    ![STM32_img02](./doc/STM32CubeIDE安裝/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/STM32CubeIDE安裝/STM32_img02.jpg)
 
 - 如果有跳出這個畫面，就放心的按Yes，然後就會開始初始化，準備開啟檔案了，可能需要一下子
 
-    ![STM32_img03](./doc/STM32CubeIDE安裝/STM32_img03.jpg)
+    ![STM32_img03](./doc/Basic_STM32/STM32CubeIDE安裝/STM32_img03.jpg)
 
 - 左邊的Project Elplorer就是我們進行專案管理的地方，點擊 Core -> Src -> main.c 打開這個.c檔，以後我們就要在這裡寫程式
 
 - 如果開啟後沒有出現可以從上面Window -> Short View -> Project Elplorer打開這個小視窗，其他有些視窗如果不小心手殘被關掉，也可以在這裡打開畫面右邊和底下是程式碼大綱以及一些監控視窗
 
-    ![STM32_img04](./doc/STM32CubeIDE安裝/STM32_img04.jpg)
+    ![STM32_img04](./doc/Basic_STM32/STM32CubeIDE安裝/STM32_img04.jpg)
 
 <h1 id="3">使用STM32CubeIDE</h1>
 
@@ -183,11 +210,11 @@
 
 - 在上面工具列那排的Window->Short View->現場表達式，就會出現在右邊的小視窗
 
-    ![STM32_img00](./doc/使用STM32CubeIDE/STM32_img00.jpg)
+    ![STM32_img00](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img00.jpg)
 
 - 接下來你會看到你的程式碼停在main函式裡面的第一行，在我這裡的情況下是`HAL_Init()`這一行
 
-    ![STM32_img01](./doc/使用STM32CubeIDE/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img01.jpg)
 
 - 非常重要!!!這個時候你的程式碼還沒有開始執行，需要**按F8才會開始執行**
 
@@ -224,9 +251,9 @@
 
 - 首先點綠色的+新增一個你要監測的記憶體位置
 
-    ![STM32_img02](./doc/使用STM32CubeIDE/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img02.jpg)
 
-    ![STM32_img03](./doc/使用STM32CubeIDE/STM32_img03.jpg)
+    ![STM32_img03](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img03.jpg)
 
 - 接著右邊就會跑出許多框框，預設會是用Hex(十六進位)來表達記憶體的值。右邊New Renderings的地方新增你要解讀這個記憶體的方式
 
@@ -234,23 +261,23 @@
 
 - 在全域的地方宣告一個變數x，並用現場表達式的方式獲取他的記憶體位置，以我來說，x這個變數放在0x20000028這個位置(不過實際上是0x20000028~0x2000002B，因為int是四個bytes嘛)
 
-    ![STM32_img04](./doc/使用STM32CubeIDE/STM32_img04.jpg)
+    ![STM32_img04](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img04.jpg)
 
 - 接著就按照上面的步驟新增要監看的記憶體位置
 
-    ![STM32_img05](./doc/使用STM32CubeIDE/STM32_img05.jpg)
+    ![STM32_img05](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img05.jpg)
 
 - 選擇Signed Integer作為解讀的方式
 
-    ![STM32_img06](./doc/使用STM32CubeIDE/STM32_img06.jpg)
+    ![STM32_img06](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img06.jpg)
 
 - 就可以順利看到0x20000028~0x2000002B的值啦，並且會以int的方式解讀
 
-    ![STM32_img07](./doc/使用STM32CubeIDE/STM32_img07.jpg)
+    ![STM32_img07](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img07.jpg)
 
 - 我們可以直接更改這個位置的值，直接點你要更改的記憶體位置，輸入新的值就OK了，順便使用現場表達式來確認這個值是否順利地被更動了。我順利的將x更改為31415926~
 
-    ![STM32_img08](./doc/使用STM32CubeIDE/STM32_img08.jpg)
+    ![STM32_img08](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img08.jpg)
 
 <h1 id="4">GPIO輸入輸出(上)</h1>
 
@@ -262,9 +289,9 @@
 
 - 針腳分成內側與外側兩個部分，外側的腳位比較簡單，直接翻到板子的背面就可以看到每個腳位的編號了，而內側的腳位名稱需要查表，看的是紅色箭頭所標示的名稱，未標示的為Arduino的腳位，因為這塊開發版是一塊兼容Arduino的板子，因此他也寫上了對應到Arduino的腳位。
 
-    ![STM32_img00](./doc/GPIO輸入輸出(上)/STM32_img00.jpg)
+    ![STM32_img00](./doc/Basic_STM32/GPIO輸入輸出(上)/STM32_img00.jpg)
 
-    ![STM32_img01](./doc/GPIO輸入輸出(上)/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/GPIO輸入輸出(上)/STM32_img01.jpg)
 
 <h2 id="4.2">ioc檔</h2>
 
@@ -272,23 +299,23 @@
 
 - 右下角的放大鏡可以輸入腳位名稱搜尋，例如輸入PB8對應到的腳位就會閃黑色
 
-    ![STM32_img02](./doc/GPIO輸入輸出(上)/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/GPIO輸入輸出(上)/STM32_img02.jpg)
 
 - 點擊選擇**GPIO_Output**這個模式，就順利的將這個腳位設為輸出模式了
 
 - 如果想要復原，則可以選擇**Reset_State**這個模式，這也有可能需要一點時間，看到腳位就會變綠色就代表成功設定完成
 
-    ![STM32_img03](./doc/GPIO輸入輸出(上)/STM32_img03.jpg)
+    ![STM32_img03](./doc/Basic_STM32/GPIO輸入輸出(上)/STM32_img03.jpg)
 
 - 只要有更動，且還沒有儲存，上面檔案這邊就會顯示" * "，這個時候按ctrl+s就可以順利儲存
 
-    ![STM32_img04](./doc/GPIO輸入輸出(上)/STM32_img04.jpg)
+    ![STM32_img04](./doc/Basic_STM32/GPIO輸入輸出(上)/STM32_img04.jpg)
 
 - 如果有遇到詢問的視窗都一律按Yes，可以打勾，下次就不會再出現提醒了。
 
-    ![STM32_img05](./doc/GPIO輸入輸出(上)/STM32_img05.jpg)
+    ![STM32_img05](./doc/Basic_STM32/GPIO輸入輸出(上)/STM32_img05.jpg)
 
-    ![STM32_img06](./doc/GPIO輸入輸出(上)/STM32_img06.jpg)
+    ![STM32_img06](./doc/Basic_STM32/GPIO輸入輸出(上)/STM32_img06.jpg)
 
 - 最後回到main.c檔案，往下滑我們可以發現自動新增一些程式碼，這段程式碼的功能是將GPIO初始化，這也就是STMCubeIDE這個IDE好用的地方，可以自動產生代碼
 
@@ -326,7 +353,7 @@
 
 - 這塊開發版上有3個LED分別對應到的腳位為**PB0**、**PB7**、**PB14**
 
-    ![STM32_img00](./doc/GPIO輸入輸出(中)/STM32_img00.jpg)
+    ![STM32_img00](./doc/Basic_STM32/GPIO輸入輸出(中)/STM32_img00.jpg)
 
 **HAL_GPIO_WritePin()**
 
@@ -381,7 +408,7 @@
 
 - 可以設計一個簡單的線路，將剛剛已經設定好的PB0以杜邦線連接到PF13，這樣我們就可以**用PF13來偵測PB0所輸出的腳位**
 
-    ![STM32_img01](./doc/GPIO輸入輸出(中)/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/GPIO輸入輸出(中)/STM32_img01.jpg)
 
 **HAL_GPIO_ReadPin()**
 
@@ -412,7 +439,7 @@
 
 - 電晶體很像水關中的閥門，平時處於關閉狀態，施加微小的力，就可以啟動閥門，使大量的水流通過。
 
-    ![STM32_img00](doc/GPIO輸入輸出(下)/STM32_img00.jpg)
+    ![STM32_img00](doc/Basic_STM32/GPIO輸入輸出(下)/STM32_img00.jpg)
 
 - 例如：**控制馬達**時，我們不可以用GPIO腳直接供給馬達，因為單晶片是無法通過那麼大的電流，因此我們可以用電晶體的方式，只要提供微小的電流來控制閥門，就可以讓這個水閥通過大電流，使馬達轉動。
 
@@ -421,13 +448,13 @@
   - N型半導體來說，當B極輸入高電位時，C、E兩極導通
   - P型半導體來說，當B極輸入高電位時，C、E兩極不導通
 
-    ![STM32_img01](doc/GPIO輸入輸出(下)/STM32_img01.jpg)
+    ![STM32_img01](doc/Basic_STM32/GPIO輸入輸出(下)/STM32_img01.jpg)
 
 <h2 id="6.2">推挽輸出&開漏輸出</h2>
 
 - 實際上的推挽輸出與開漏輸出是使用MOS場效電晶體來設計，下圖是其等效電路
 
-    ![STM32_img02](doc/GPIO輸入輸出(下)/STM32_img02.jpg)
+    ![STM32_img02](doc/Basic_STM32/GPIO輸入輸出(下)/STM32_img02.jpg)
 
 **推挽輸出：**
 
@@ -451,7 +478,7 @@
 
 - 實際使用時，可以先將腳位設成GPIO輸出，接著在左側System core底下的GPIO選擇剛剛配置的腳位，底下可以做設定，GPIO mode設為**Output Open Drain**開漏模式
 
-    ![STM32_img03](doc/GPIO輸入輸出(下)/STM32_img03.jpg)
+    ![STM32_img03](doc/Basic_STM32/GPIO輸入輸出(下)/STM32_img03.jpg)
 
 - 使用時記得要外部上拉，否則這個腳位是沒辦法輸出高電位的
 
@@ -471,7 +498,7 @@
 
 - 採集的頻率越高，越能完整的描述這個連續的訊號，這也就是**取樣率**的概念
 
-    ![STM32_img00](./doc/ADC電壓採集/STM32_img00.png)
+    ![STM32_img00](./doc/Basic_STM32/ADC電壓採集/STM32_img00.png)
 
 **解析度：**
 
@@ -490,7 +517,7 @@
   - ADC轉換器就是一台機器，可以將類比訊號轉換為數位訊號
   - 這台機器有19個開口來接收類比訊號(當然一次還是只能接收一個啦)，但這台機器運作的速度非常快(根據我簡單的測量，轉換一次的時間約為11微秒左右)，因此就算你19個通道全部都在輸入，那也只需要11X19=209微秒就可以測量完所有的通道
 
-    ![STM32_img01](./doc/ADC電壓採集/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/ADC電壓採集/STM32_img01.jpg)
 
 <h2 id="7.3">單通道轉換</h2>
 
@@ -501,7 +528,7 @@
 
 - 除了上面所說查表的方式可以知道該通道對應的腳位以外，也可以再Configuration的地方點GPIO Settings，底下的PinName就是腳位名稱
 
-    ![STM32_img02](./doc/ADC電壓採集/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/ADC電壓採集/STM32_img02.jpg)
 
 ### 使用3個函式來完成ADC的轉換：
 
@@ -563,7 +590,7 @@ while (1)
 
 - 一般資料匯流排的大小與位址匯流排的大小是相同的
 
-    ![STM32_img00](./doc/STM32記憶體架構/STM32_img00.png)
+    ![STM32_img00](./doc/Basic_STM32/STM32記憶體架構/STM32_img00.png)
 
 **資料匯流排(data bus)：**
 
@@ -587,7 +614,7 @@ while (1)
 
 - 這裡所說的映射與數學上的映射道理是相同的。在集合論當中，若A中的任一元素x，依照某種規律，必有B中唯一確定的元素與y對應，則稱f是一個從A到B的映射
 
-    ![STM32_img01](./doc/STM32記憶體架構/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/STM32記憶體架構/STM32_img01.jpg)
 
 - **要強調的是32的意思是最大可以定址的大小為32bytes，並不代表有這麼大的記憶體**
 
@@ -597,11 +624,11 @@ while (1)
 
 - 既然沒有這麼大的記憶體，那為什麼我們需要定址到這麼大呢?因為我們並不想讓所有的記憶體位址全部連在一起，通常我們會做初步的分類。下圖稱為記憶體圖(memory map)
 
-    ![STM32_img02](./doc/STM32記憶體架構/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/STM32記憶體架構/STM32_img02.jpg)
 
 - 在這4GB的地址空間中，大致被分為8塊(Block)，每塊的大小都有512MB
 
-    ![STM32_img03](./doc/STM32記憶體架構/STM32_img03.png)
+    ![STM32_img03](./doc/Basic_STM32/STM32記憶體架構/STM32_img03.png)
 
 - STM32的記憶體掌握大致分成兩個
   - 快閃記憶體，簡稱Flash：
@@ -631,7 +658,7 @@ while (1)
 
 - 我們之後在做的任何設定，例如腳位要做高電位輸出還是低電位輸出都是在更動這個地方的記憶體
 
-    ![STM32_img04](./doc/STM32記憶體架構/STM32_img04.png)
+    ![STM32_img04](./doc/Basic_STM32/STM32記憶體架構/STM32_img04.png)
 
 <h1 id="9">庫函數包裝—對於底層暫存器的操縱(上)</h1>
 
@@ -645,7 +672,7 @@ while (1)
 
 - 因此我們會以功能來命名這些記憶體，這個別名就是我們常說的暫存器，而將已配好地址、有特定功能的記憶體取別名的過程就叫做**暫存器映射**
 
-    [STM32F4xx中文參考手冊](./doc/庫函數包裝—對於底層暫存器的操縱(上)/STM32F4xx中文参考手册.pdf)
+    [STM32F4xx中文參考手冊](./doc/Basic_STM32/庫函數包裝—對於底層暫存器的操縱(上)/STM32F4xx中文参考手册.pdf)
 
 <h2 id="9.2">外設地址映射</h2>
 
@@ -661,7 +688,7 @@ while (1)
 
 - 從下表我們可以看到GPIOA的基地址相對於AHB1匯流排的地址偏移為0，也就是AHB1的第一個外設就是GPIOA
 
-    ![STM32_img00](./doc/庫函數包裝—對於底層暫存器的操縱(上)/STM32_img00.png)
+    ![STM32_img00](./doc/Basic_STM32/庫函數包裝—對於底層暫存器的操縱(上)/STM32_img00.png)
 
 - 處於XX外設的地址範圍內的就是該外設的暫存器。
 
@@ -669,11 +696,11 @@ while (1)
 
 - 以GPIOH端口為例，來了解GPIO實際上到底有那些暫存器。
 
-    ![STM32_img01](./doc/庫函數包裝—對於底層暫存器的操縱(上)/STM32_img01.png)
+    ![STM32_img01](./doc/Basic_STM32/庫函數包裝—對於底層暫存器的操縱(上)/STM32_img01.png)
 
 - 這裡我們以GPIO端口置位/復位暫存器為例(GPIOx_BSRR)，介紹如何理解暫存器的說明
 
-    ![STM32_img02](./doc/庫函數包裝—對於底層暫存器的操縱(上)/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/庫函數包裝—對於底層暫存器的操縱(上)/STM32_img02.jpg)
 
   1. **暫存器的名稱**
 
@@ -848,7 +875,7 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
 
 - 優先級的分組是由**中斷優先級暫存器NVIC_IPRX**(在F429中，x=0~90)來配置外部中斷的優先級，原則上每個外部中斷可配置的優先級為0~255，數值越小優先級越高。但是因為精簡化的設計，實際上支持的優先級會減少，在F429中，只使用了bit4~bit7
 
-    ![STM32_img00](./doc/NVIC中斷概要/STM32_img00.jpg)
+    ![STM32_img00](./doc/Basic_STM32/NVIC中斷概要/STM32_img00.jpg)
 
 <h2 id="11.3">優先級分組</h2>
 
@@ -856,11 +883,11 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
 
 - 如果有許多中斷同時發起請求，**主優先級高**的就會搶暫主優先級低的優先執行，如果主優先級相同則先比**子優先級**，如果兩個優先級都相同，就比較他們的**中斷編號**，編號小的優先執行。
 
-    ![STM32_img01](./doc/NVIC中斷概要/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/NVIC中斷概要/STM32_img01.jpg)
 
 - 點選system core底下的NVIC進行配置，預設情況下分組方式4個bit全部都給搶暫優先級(主優先級(Preemption Priority))，沒有子優先級(Sub Priority)。
 
-    ![STM32_img02](./doc/NVIC中斷概要/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/NVIC中斷概要/STM32_img02.jpg)
 
 <h1 id="12">EXTI外部中斷&事件控制器</h1>
 
@@ -876,13 +903,13 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
     - 一種是低電位變高電位時，也就是電位上升的過程(**上升緣檢測**)
     - 另一種是高電位變低電位時，也就是電位下降的過程(**下降緣檢測**)
 
-    ![STM32_img00](./doc/EXTI外部中斷&事件控制器/STM32_img00.jpg)
+    ![STM32_img00](./doc/Basic_STM32/EXTI外部中斷&事件控制器/STM32_img00.jpg)
 
 <h2 id="12.2">實作-利用開發版上的按鈕執行外部中斷</h2>
 
 - 開發版上已經有現成的按鈕可以使用，不必自己在接線路，非常方便。
 
-    ![STM32_img01](./doc/EXTI外部中斷&事件控制器/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/EXTI外部中斷&事件控制器/STM32_img01.jpg)
 
 - 由datasheet可以知道，按鈕是連接在**PC13**腳位上。也就是說當你按下按鈕後，PC13就會輸入高電位，而放開則為低電位。我們就可以利用按鈕來讓電位從低變高(上升緣)，從而觸發中斷。
 
@@ -890,15 +917,15 @@ void HAL_GPIO_WritePin(GPIO_TypeDef* GPIOx, uint16_t GPIO_Pin, GPIO_PinState Pin
 
 1. 先將PC13腳位設為**GPIO_EXTI_13**
 
-    ![STM32_img02](./doc/EXTI外部中斷&事件控制器/STM32_img02.jpg)
+    ![STM32_img02](./doc/Basic_STM32/EXTI外部中斷&事件控制器/STM32_img02.jpg)
 
 2. 接著可以在System Core 內的 GPIO選擇剛剛的PC13腳位來設定**GPIO mode**，可以設定**觸發中斷的時機**
 
-    ![STM32_img04](./doc/EXTI外部中斷&事件控制器/STM32_img04.png)
+    ![STM32_img04](./doc/Basic_STM32/EXTI外部中斷&事件控制器/STM32_img04.png)
 
 3. 接著在NVIC的地方將剛剛腳位的中斷設為**Enabled**
 
-    ![STM32_img03](./doc/EXTI外部中斷&事件控制器/STM32_img03.jpg)
+    ![STM32_img03](./doc/Basic_STM32/EXTI外部中斷&事件控制器/STM32_img03.jpg)
 
 **外部中斷觸發的函式：**
 
@@ -943,7 +970,7 @@ __weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
     - 基本定時器
     - 高級定時器
 
-    ![STM32_img00](./doc/STM32輾壓Arduino的功能—TIM(上)/STM32_img00.png)
+    ![STM32_img00](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(上)/STM32_img00.png)
 
 <h2 id="13.2">計數器 counter</h2>
 
@@ -957,7 +984,7 @@ __weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 - 兩個匯流排的頻率在預設的情況下都是**16MHz**，可以在Clock configuration裡面看到
 
-    ![STM32_img01](./doc/STM32輾壓Arduino的功能—TIM(上)/STM32_img01.jpg)
+    ![STM32_img01](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(上)/STM32_img01.jpg)
 
 **參數：**
 
@@ -979,11 +1006,11 @@ __weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   1. 在Timers的選單裡面選TIM2，在Clock source裡面選**Internal clock**
 
-        ![STM32_img02](./doc/STM32輾壓Arduino的功能—TIM(上)/STM32_img02.jpg)
+        ![STM32_img02](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(上)/STM32_img02.jpg)
 
   2. 底下參數的配置就調整**PSC**以及**ARR**，我們先把PSC設為15999，也就是分頻數為16000讓時鐘的頻率由原本的16MHz變為1kHz，而ARR設為10000，只要數到10000，就會歸零(不會出現1000這個數字)。
 
-        ![STM32_img03](./doc/STM32輾壓Arduino的功能—TIM(上)/STM32_img03.png)
+        ![STM32_img03](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(上)/STM32_img03.png)
 
 - 程式
 
@@ -1006,10 +1033,453 @@ __weak void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
   - 一樣要記得設全域變數 x 才能使用現場表達式做監測
 
-  1. **HAL_TIM_Base_Start(TIM_HandleTypeDef *htim)**
+  1. **HAL_TIM_Base_Start(TIM_HandleTypeDef \*htim)**
      - 看到類似這種的函式HAL_XXX_Start，這種函式功能為讓某種功能啟用
      - 他就是讓TIMER開始計數
 
   2. **__HAL_TIM_GET_COUNTER()**
+     - 得到TIMER現在數到哪(也就是Counter的值)
+     - 用C語言#define的方式來定義
+     - `#define __HAL_TIM_GET_COUNTER(__HANDLE__)  ((__HANDLE__)->Instance->CNT)`
+     - 傳進去一個__handle__結構的指標變數(htim2)，而這個函式就負責找到這個結構變數底下的Instance的CNT變數
+
+        ![STM32_img04](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(上)/STM32_img04.jpg)
+
+<h2 id="13.4">上數(count-up)、下數(count-down)、中心對齊(center-aligned)</h2>
+
+- 了解counter的其他設定
+
+    ![STM32_img05](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(上)/STM32_img05.jpg)
+
+- 在這裡可以更動計數的模式，用以下的圖可以清楚地了解這三種計數模式的差別，由上到下依序為中心對齊、下數、上數
+
+    ![STM32_img06](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(上)/STM32_img06.png)
+
+- 這三種模式目前對我們來說還沒什麼用處，要等講到**PWM輸出**的時候才能了解意義，現在我們就知道他數的模式有這三種就好。
+
+<h1 id="14">STM32輾壓Arduino的功能—TIM(下)</h1>
+
+<h2 id="14.1">TIMER+NVIC中斷</h2>
+
+- 使用Timer的中斷功能
+
+- 開啟中斷
+
+    ![STM32_img00](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(下)/STM32_img00.jpg)
+
+- 要注意的是什麼時候會進中斷，在不同的模式下進中斷的時機不同
+    - 上數與下數都是在一個周期的最後進入
+    - 中心對齊則是數到頭尾都會進入中斷
+
+    ![STM32_img01](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(下)/STM32_img01.png)
+
+<h2 id="14.2">小程式1-實作Counter</h2>
+
+- 實作一個counter來計時，利用中斷的方式，設置**PSC=15，ARR=1000**，當這個counter數到1000的時候就會進入中斷，稍微計算一下就可以知道每1ms會進入一次中斷(PSC將時鐘訊號降低1/16，變成1MHz，1000次會進入中斷，又變為1kHz)。
+
+- 宣告兩個變數，ms與sec，分別為毫秒與秒。當每次進入中斷就把ms++,只要ms=1000代表經過1s了，我們就將ms歸零，sec加一
+
+- `HAL_TIM_Base_Start_IT(&htim2);` --> 尾端加上了"IT"，意思為interrupt
+  - 第一段程式碼**放在main裡面不需要放在迴圈當中**，他不需要被重複的執行，只要start一次就可以了。
+
+- 這一段函式其實在**tim.c**當中已經被定義過了，而我們這邊是重新定義這個函式，可以在以下的地方打開這個檔案直接搜尋這個函式
+    - 第二段程式碼就是放在**一般函式定義的地方**，因此**在main以外的任何地方**都可以，我通常習慣放在底下的Begin和End之間，接近程式碼尾端的位置。
+
+        ```C
+        /* USER CODE BEGIN 4 */
+
+        /* USER CODE END 4 */
+        ```
+
+    - 記得要新增sec與ms兩個全域變數，才能使用現場表達式監看喔
+
+    ```C
+    void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
+        if(htim->Instance == TIM2){
+            ms++;
+            if(ms==1000){
+                ms = 0;
+                sec++;
+            }
+        }
+    }
+    ```
+
+    ![STM32_img02](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(下)/STM32_img02.jpg)
+
+    ![STM32_img03](./doc/Basic_STM32/STM32輾壓Arduino的功能—TIM(下)/STM32_img03.jpg)
+
+<h2 id="14.3">小程式2-實作HAL_Delay微秒級版本</h2>
+
+- 函式庫裡的HAL_Delay()只能實現**毫秒級**的delay
+
+- `__HAL_TIM_GET_COUNTER()`
+  - 獲得現在counter數到的值
+
+- `__HAL_TIM_SET_COUNTER()`
+  - 設定counter的值
+  - 這個函式一樣是用#define的方式定義的，我們可以在tim.h的文件中找到
+
+- 實作delay的思路是，每次呼叫這個函式我們就將counter的值歸零，然後讓程式進到一個while的迴圈當中，只要counter的值小於傳進來的參數，就繼續在迴圈執行，大於等於時則跳出迴圈，這樣就可以讓程式卡在這個地方不繼續持行下去，達到delay的效果。
+
+    ```C
+    void microDelay(int t){
+        __HAL_TIM_SET_COUNTER(&htim2,0);
+        while(__HAL_TIM_GET_COUNTER(&htim2) < t){
+        }
+    }
+    ```
+
+    ```C
+    /* Infinite loop */
+    /* USER CODE BEGIN WHILE */
+    while (1)
+    {
+        microDelay(1000);
+        ms++;
+        if(ms==1000){
+            sec++;
+            ms=0;
+        }
+    /* USER CODE END WHILE */
+
+    /* USER CODE BEGIN 3 */
+    }
+    /* USER CODE END 3 */
+    ```
+
+<h1 id="15">Counter的硬體實現</h1>
+
+- counter是如何透過**硬體**來實作出來的，牽涉到數位邏輯設計相關內容
+
+<h2 id="15.1">邏輯閘</h2>
+
+- 邏輯閘就是能對一或多個輸入訊號作運算並產生輸出訊號的電子電路
+
+    ![STM32_img00](./doc/Basic_STM32/Counter的硬體實現/STM32_img00.jpg)
+
+<h2 id="15.2">循序邏輯電路，門閂(latch)</h2>
+
+- 循序邏輯電路，也就是這種**電路和時間是相關的**，他有兩個很重要的特點：
+
+  1. 具有**記憶單元**：電路可以記住某些值
+
+  2. 電路是有**回授的(feedback)**：將電路內部有記憶單元記住的某些資訊回授，並且根據這些資訊在計算出新的輸出
+
+**怎麼利用上面所說的那幾種邏輯閘做出記憶單元呢?**
+
+- 最少要有三種功能(記住現在的狀態(No change)、設為1(Set)、設為0(Reset))
+
+- 透過**兩個NOR邏輯閘**加上一些線路，就可以做出**記憶單元**
+    - Q'是作為回授用的，先將Q當作輸出就好
+    - S是1且R是0時會輸出1，此時是SET(Q=1)
+    - S是0且R是1時會輸出0，此時功能為RESET(Q=0)
+    - 當Q=R=0時，Q的輸出不會改變，也就是如果原本Q=1那麼他就會一直維持1，反之亦然
+    - 若是輸入Q=R=1，則下個狀態的輸出是無法被預測的
+
+    ![STM32_img01](./doc/Basic_STM32/Counter的硬體實現/STM32_img01.png)
+
+    ![STM32_img02](./doc/Basic_STM32/Counter的硬體實現/STM32_img02.png)
+
+<h2 id="15.3">正反器(flip-flop)</h2>
+
+- **D型的正反器**，他有兩個輸入分別是**控制訊號D**以及**時鐘訊號CLK**，正反器其實也是一個記憶單元，他是透過**兩組latch**來實現，而他與latch不同的是，他具有**synchronous(同步)**的特性，也就是他只會在**上升緣**會**下降緣**會改變輸出的值，其他時候即使你輸入改變，輸出也會維持原本的，而latch不同，只要你輸入改變，輸出馬上就跟著改變。
+    - D=0時輸出0
+    - D=1時輸出1
+
+    ![STM32_img03](./doc/Basic_STM32/Counter的硬體實現/STM32_img03.jpg)
+
+    ![STM32_img04](./doc/Basic_STM32/Counter的硬體實現/STM32_img04.png)
+
+<h2 id="15.4">counter的電路設計圖</h2>
+
+- 這個counter是一個**4-bit**的二進位計數器，他會從0000-0001-0010-0011-0100-0101-0110-0111......-1110-1111總共16個數，數到15時下一個歸0，因此以STM32的配置來說，這個counter的ARR值是16。
+
+    ![STM32_img05](./doc/Basic_STM32/Counter的硬體實現/STM32_img05.png)
+
+    Note: 全部畫出來會太亂，因此用一個block代替
+
+<h1 id="16">STM32系統時鐘配置(上)</h1>
+
+https://ithelp.ithome.com.tw/articles/10282170
+
+<h1 id="17">STM32系統時鐘配置(下)</h1>
+
+https://ithelp.ithome.com.tw/articles/10282171
+
+<h1 id="18">PWM輸出-模擬類比訊號</h1>
+
+<h2 id="18.1">PWM-脈衝寬度調變</h2>
+
+- PWM是一種可以**將類比訊號以數位編碼來表示的技術**
+
+- 表示的方法就是利用**高頻率的方波**，並時時的改變**工作週期(duty cycle)**，達到模擬類比訊號的效果
+
+    ![STM32_img00](./doc/Basic_STM32/PWM輸出-模擬類比訊號/STM32_img00.png)
+
+**為什麼這樣的波形就可以模擬類比訊號的輸出呢?**
+
+- 用LED來想像，如果波的頻率很慢，例如1秒高電位1秒低電位，那我們肉眼就會看到燈泡閃爍
+
+- 例如頻率是1MHz，也就是1秒鐘高低電位變化一百萬次，這已經遠遠的超出肉眼可以辨識的頻率了，此時你就會看到LED的亮度變一半
+
+- 可以調整一個周期內高電位的比率(這也就是duty cycle)，如果在一個周期內有90%的時間都是高電位的話，那自然燈泡的亮度就會比較亮
+
+<h2 id="18.2">如何描述一個方波</h2>
+
+- 有兩個參數，第一個就是**頻率**，另一個就是**工作週期(duty cycle)**
+  - 假設一個PWM的頻率是1kHz、工作週期為30%，那也就是一個波的週期是1ms，而在這一毫秒當中，有0.3ms是高電位。
+  - Arduino的**analogWrite**輸出的就是方波，而他預設的頻率為490Hz不太能更動，而我們函式放的參數是0~255，這竟是調整工作週期，255時，工作週期為100%
+
+<h2 id="18.3">PWM輸出-設定</h2>
+
+- 打開TIM2、CH1的PWM Output，選哪一個channel都沒關係，只是不同channel會對應到不同的腳位(TIM2 CH1的腳位是PA0)，一樣可以在底下configuration的GPIO setting裡面找到
+
+    ![STM32_img01](./doc/Basic_STM32/PWM輸出-模擬類比訊號/STM32_img01.jpg)
+
+- 方波的輸出是利用**timer**，我們需要調整三個參數，**PSC**、**ARR**、與**Pulse**，這些參數與timer的使用相同，只有pulse是新的，在預設情形下**CNT < Pulse**的情況會是輸出**高電位**，反之則輸出低電位。
+
+**範例: 頻率為1kHz，dutycycle為50%的方波**
+
+- PSC = 15, ARR = 1000, Pulse = 500 --> duty cycle = 500 / 1000 * 100% = 50%
+
+    ![STM32_img02](./doc/Basic_STM32/PWM輸出-模擬類比訊號/STM32_img02.jpg)
+
+**程式**
+
+- `HAL_TIM_PWM_Start(TIM_HandleTypeDef *htim, uint32_t Channel)`
+  - 把它**放在while迴圈之前啟動一次即可**，第二個參數放你要啟用哪一個頻道，可以為TIM_CHANNEL_1~4，如果要一次啟用多個也可以放TIM_CHANNEL_ALL。
+
+    ```C
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_1);
+    while (1)
+    {
+        /* USER CODE END WHILE */
+        /* USER CODE BEGIN 3 */
+    }
+    /* USER CODE END 3 */
+    ```
+
+**如何知道你有正確輸出呢?**
+
+1. 電錶測量：
+
+   - 只會測量到**平均出來的電壓**，一般GPIO的輸出是3.3V，而我們設定的duty cycle = 50% 因此用電表量出來的電壓應為3.3 * 0.5 = 1.65V
+   - 不是很直觀的看到我們的輸出，也有可能它本身的輸出就是1.65V
+
+2. 示波器：
+
+    ![STM32_img03](./doc/Basic_STM32/PWM輸出-模擬類比訊號/STM32_img03.jpg)
 
 
+**伺服馬達是透過不同的工作週期來調整角度**
+
+- 要控制角度也就是要調整工作週期，因此我們要有辦法更改pulse的值
+
+- `__HAL_TIM_SET_AUTORELOAD(__HANDLE__, __AUTORELOAD__)`
+  - 修改**ARR**的值，要注意的是，同一個timer，的ARR值是相同的，也就是說同一個timer，不同頻道所產生的方波，頻率皆相同。
+  - 修改TIM2的ARR值為50：`__HAL_TIM_SET_AUTORELOAD(&htim2, 50);`
+
+- `__HAL_TIM_SET_COMPARE(__HANDLE__, __CHANNEL__, __COMPARE__)`
+  - 修改**Pulse**的值，而Pulse則是每個頻道獨立的，因此我們可以再同一個timer中不同頻道產生出不同工作週期的方波。
+  - 修改TIM2的Channel 1的Pulse為50：`__HAL_TIM_SET_COMPARE(&htim2,TIM_CHANNEL_1,50);`
+
+<h1 id="19">Servo控制-By PWM輸出</h1>
+
+<h2 id="19.1">Servo</h2>
+
+- 伺服馬達總共就只有三條線(通常是咖啡色、紅色、黃色)，分別對應到**GND**、**5V**、**PWM**
+
+    ![STM32_img00](./doc/Basic_STM32/Servo控制-By%20PWM輸出/STM32_img00.jpg)
+
+- 在Arduino的時代，PWM的那條線我們就會把他接到Arduino上面有一個波浪號的腳位上，然後再打一行程式：
+    - `myservo.write()`：做方波的輸出，而這個方波的頻率是490Hz(~500Hz)
+
+    ```C
+    Servo myservo;  
+    void setup() {
+        myservo.attach(9);  // 設定要將伺服馬達接到哪一個PIN腳
+    }
+    void loop() {   
+        myservo.write(50)
+    }
+    ```
+
+<h2 id="19.2">用STM32控制Servo</h2>
+
+**究竟是多少dutycycle對應到多少角度呢?**
+
+- 起初將0%對應到0度，100%對應到180度，結果很顯然Servo完全不受控
+
+- 在arduino用myservo.write()將servo轉到兩個角度，我再用示波器去量測
+
+    ```C
+    void loop() {   
+        myservo.write(0)
+        myservo.write(150)
+    }
+    ```
+
+    ![STM32_img01](./doc/Basic_STM32/Servo控制-By%20PWM輸出/STM32_img01.PNG)
+
+- 由於角度與dutycycle是線性的關係，有兩點就可以反推線性方程式了
+
+    `duty = 3 + (double) angle / 150 * 7.5;`
+
+- 利用 `__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_1, 20000*duty);` 來改pulse的值，(timer跟channel要看你腳位的配置)，duty這個變數就是dutycycle，而角度換算成dutycycle的公式就用上面的那行即可。
+
+<h1 id="20">客製化的PWM輸出</h1>
+
+- 客製化PWM指的就是我們可以輸出任何想要的方波波形
+  - 輸出10個完整的波後停止輸出
+  - 輸出10個波的循環，而在一個循環內，每個波的工作週期遞增(0%、10%、20%...)
+
+<h2 id="20.1">輸出10個波後停止輸出</h2>
+
+- 思路：用一個變數來記錄現在輸出幾個波，再利用PWM的中斷功能，在一個周期內，波從高電位變低電位的時候進入中斷，把變數加一，只要大於我們指定的數就停止輸出。
+
+- PWM中斷函式： `void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
+}` --> 一樣在tim.c檔當中以若定義的形式定義過了，我們可以直接複製到main.c檔當中重新定義。
+
+    ```C
+    /* USER CODE BEGIN 4 */
+    int pulse = 5;
+    int count = 0;
+    void HAL_TIM_PWM_PulseFinishedCallback(TIM_HandleTypeDef *htim) {
+        if (++count == pulse) {
+            count = 0;
+            HAL_TIM_PWM_Stop_IT(&htim2, TIM_CHANNEL_1);
+        }
+    }
+    /* USER CODE END 4 */
+    ```
+
+    在main當中啟動PWM輸出
+
+    ```C
+    HAL_TIM_PWM_Start_IT(&htim2, TIM_CHANNEL_1);
+        while (1) {
+        /* USER CODE END WHILE */
+
+        /* USER CODE BEGIN 3 */
+        }
+        /* USER CODE END 3 */
+    ```
+
+<h2 id="20.2">duty cycle遞增的10個波</h2>
+
+[https://ithelp.ithome.com.tw/articles/10282174]
+
+<h1 id="21">旋轉編碼器—Encoder</h1>
+
+- Encoder也就是編碼器，可用於**將馬達的旋轉資訊轉換為方波的形式輸出**
+
+- 內部是一圈上面有黑色條紋，然後會有光束照射在那一圈上面，底下有光感測器，只要馬達旋轉到光剛好照射到**黑色條紋**上，就會輸**高電位**，若照射到**透明的區域**，光感測器就會感測到光束，就會輸出**低電位**
+
+    ![STM32_img00](./doc/Basic_STM32/旋轉編碼器—Encoder/STM32_img00.jpg)
+
+- 因此馬達旋轉的時候就會形成高低電位來回變換的方波。我們只要知道**一個方波的周期**就可以推算**馬達的轉速**了
+
+- 不論馬達正轉或反轉，他都會輸出相同的波形，在將黑色條紋分成內外兩圈，而內外兩圈並不是平行的(上面的encoder就是這種形式的)，而是有一點**交錯(相位差90度)**，然後變成輸出兩個波。這樣正反轉的時候，這兩個波的先後順序會不相同
+
+    ![STM32_img01](./doc/Basic_STM32/旋轉編碼器—Encoder/STM32_img01.jpg)
+
+<h2 id="21.1">STM32 Encoder mode</h2>
+
+只要把兩隻腳位接到Encoder的兩個輸出上，並在STM32開啟**encoder mode**，你在用一個變數去讀值，只要你**馬達正轉，這個值就會增加**，反之則減少，如此你就可以透過單位時間變數的變化量來推得馬達的角速度。
+
+<h1 id="22">TIM的強大功能—Encoder mode</h1>
+
+https://ithelp.ithome.com.tw/articles/10282176
+
+<h1 id="23">TIM-輸入捕獲</h1>
+
+https://ithelp.ithome.com.tw/articles/10282177
+
+<h1 id="24">STM32實際應用1—馬達精準控速(PID初淺教學(上))</h1>
+
+<h2 id="24.1">PID是什麼?</h2>
+
+- PID是「控制方法」，是**根據目前狀態與預設值的偏差值**，按**比例**、**積分**、**微分**等運算，運算結果用以輸出來進行控制。
+
+- 以馬達來說，我們需要的是馬達以一個恆定的速度轉動，因此先透過之前介紹過的encoder(編碼器)，來得知目前的轉速，再以上述的運算，最後根據計算的結果來輸出電壓。
+
+    ![STM32_img00](./doc/Basic_STM32/STM32實際應用1—馬達精準控速(PID初淺教學(上))/STM32_img00.png)
+
+<h2 id="24.2">控制方法</h2>
+
+![STM32_img01](./doc/Basic_STM32/STM32實際應用1—馬達精準控速(PID初淺教學(上))/STM32_img01.png)
+
+### 比例控制
+
+- 假設初始時刻，水缸裡的水位是0.2米，那麼當前時刻的水位和目標水位之間是存在一個誤差的(error)，。假設旁邊站著一個人，這個人通過往缸里加水的方式來控制水位。如果單純的用比例控制演算法，就是`指加入的水量u和誤差error是成正比的`。
+
+    `u=kp*error`
+
+- 單單的比例控制存在著一些不足，其中一點就是–**穩態誤差**
+
+- 假設kp取0.5，那麼會存在著某種情況，假設經過幾次加水，水缸中的水位到0.8時，水位將不會再變換，因為，水位為0.8，則誤差error=0.2. 所以每次往水缸中加水的量為u=0.5*0.2=0.1.同時，每次加水，缸裡又會流出去0.1米的水！！！加入的水和流出的水相抵消，水位將不再變化！！
+
+- 以馬達來說，摩擦力就相當於是這個例子中的「漏水」
+
+### 積分控制
+
+- 該分量和誤差的積分是正比關係
+
+- 比例+積分控制演算法為： `u=kp*error+ ki∗∫ error`
+
+- 在離散情況下做累加(sigma)
+
+- 第一次的誤差error是0.8，第二次的誤差是0.4，∫error=0.8+0.4=1.2
+
+- 由於這個積分項會將前面若干次的誤差進行累計，所以可以很好的消除穩態誤差
+
+### 微分控制
+
+- 在離散的情況下，我們沒辦法做到真正的「微分」，我們實際上在做的是error的差值，就是t時刻和t-1時刻error的差
+
+- `u=kd*（error（t）-error（t-1））/T`，其中的kd是一個係數項。可以看到，在刹車過程中，因為error是越來越小的，所以這個微分控制項一定是負數，在控制中加入一個負數項，他存在的作用就是為了防止汽車由於刹車不及時而闖過了線。
+
+- 當發現水缸裡的水快要接近1的時候，加入微分項，可以防止給水缸裡的水加到超過1米的高度，說白了就是減少控制過程中的震盪。
+
+<h1 id="25">STM32實際應用1—馬達精準控速(PID初淺教學(下))</h1>
+
+- 我們只能以離散的形式來做計算
+
+    ![STM32_img00](./doc/Basic_STM32/STM32實際應用1—馬達精準控速(PID初淺教學(下))/STM32_img00.jpg)
+
+- 它把積分轉換成為連加，而微分轉換成為誤差差值除以時間，這些都是基本的加減乘除運算
+
+- 利用一個TIMER，並且設定好進入中斷的週期，而中斷函式內要做的事有兩個：計算轉速、以PID計算輸出值。
+
+- 一般來說PID計算的週期越短，我們可以更快的達到目標值，但是當週期越短，我們測量馬達轉速的精準度也會下降。因此要在兩者間取個平衡
+
+    ```C
+    void Motor::pid() {
+        /***Parameter***/
+        double P = 5000;
+        double I = 5;
+        double D = 350;
+
+        /***Measurement***/
+        rps = (double) v_angular / 360 * 1000 / t_measure;
+
+        /*** Control Speed ***/
+        err = goal-rps;
+        rps_aft = rps;
+        proportion = (double) P * err;
+        integral += (double) I * err * t_measure / 1000;
+        differential = (double) -1 * D * (double) (rps_aft - rps_bef) / t_measure* 1000;
+        cycle += proportion + integral + differential;
+
+        /***Output***/
+    }
+    ```
+
+<h1 id="26">STM32實際應用2—DMA讓你的步進馬達不再失步</h1>
+
+https://ithelp.ithome.com.tw/articles/10282182
+
+<h1 id="27">STM32系列最終章!</h1>
+
+https://ithelp.ithome.com.tw/articles/10282183
