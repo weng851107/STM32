@@ -28,6 +28,20 @@
     - [UART 串列傳送分成三種模式](#3.2.1)
   - [HAL庫UART函數庫介紹](#3.3)
     - [UART結構體定義](#3.3.1)
+- [Timer](#4)
+  - [Basic](#4.1)
+    - [計數原理](#4.1.1)
+    - [HAL 函式庫](#4.1.2)
+  - [Interrupt](#4.2)
+    - [HAL 函式庫](#4.2.1)
+  - [Output_Compare](#4.3)
+    - [HAL 函式庫](#4.3.1)
+  - [PWM](#4.4)
+    - [HAL 函式庫](#4.4.1)
+  - [Input_Capture](#4.5)
+
+
+
 
 
 <h1 id="0">Reference</h1>
@@ -35,6 +49,8 @@
 - [初次學習的學習清單](https://ithelp.ithome.com.tw/articles/10281160)
 
 - https://ithelp.ithome.com.tw/users/20141979/articles?page=4
+
+- [HAL庫](https://doc.embedfire.com/products/link/zh/latest/tutorial/ebf_stm32_hal_tutorial.html)
 
 
 <h2 id="0.1">STM32開發之串口講解</h2>
@@ -624,7 +640,7 @@ HAL_UART_ErrorCallback();                                   /*串口接收錯誤
         /* UART in mode Receiver ---------------------------------------------------*/
         if((tmp_flag != RESET) && (tmp_it_source != RESET))
         { 
-        UART_Receive_IT(huart);
+            UART_Receive_IT(huart);
         }
         ```
 
@@ -634,8 +650,8 @@ HAL_UART_ErrorCallback();                                   /*串口接收錯誤
         /* UART in mode Transmitter ------------------------------------------------*/
         if (((isrflags & USART_SR_TXE) != RESET) && ((cr1its & USART_CR1_TXEIE) != RESET))
         {
-        UART_Transmit_IT(huart);
-        return;
+            UART_Transmit_IT(huart);
+            return;
         }
         ```
 
@@ -656,9 +672,215 @@ HAL_UART_ErrorCallback();                                   /*串口接收錯誤
 
 https://www.twblogs.net/a/5d52ad86bd9eee541c31686d
 
-#### 重新定義printf函數
+**UART接收中斷**
 
+- **因爲中斷接收函數只能觸發一次接收中斷，所以我們需要在中斷回調函數中再調用一次中斷接收函數**
 
+  1. 初始化串口
+  2. 在main中第一次調用接收中斷函數
+  3. 進入接收中斷，接收完數據  進入中斷回調函數
+  4. 修改HAL_UART_RxCpltCallback中斷回調函數，處理接收的數據
+  5. 回調函數中要調用一次HAL_UART_Receive_IT函數，使得程序可以重新觸發接收中斷
+
+<h1 id="4">Timer</h1>
+
+<h2 id="4.1">Basic</h2>
+
+[Reference](https://medium.com/%E9%96%B1%E7%9B%8A%E5%A6%82%E7%BE%8E/stm32-06-timer-basic-40aed2415d85)
+
+<h3 id="4.1.1">計數原理</h3>
+
+- 所有 Timer 的計時原理大致上都是利用時脈訊號作為觸發去 **tick** 踢計時器，計時器內部有**計數器 counter** 計算被踢了幾下，由於觸發訊號具有週期性因此可以知道每經過多久會踢一下計時器，如此就可以知道經過多少時間。
+
+- 踢計時器的觸發訊號：
+  - **外部訊號**例如利用訊號產生器做實驗或是一個可以產生週期訊號的震盪電路
+  - 晶片**內部的時脈**
+
+- **Prescaler 分頻器** 的功能是把訊號頻率降低，由於計數器有資料長度限制如果踢太快那麼計數器很快就計數溢位這對於長時間延遲需求是個困擾。
+
+- 計數器的計數方式有上數、下數、中心對齊 ( 上數 + 下數 )：
+  - 上數方式：計數器從 0 開始往上累加每一次加 1 ，累加的速度由觸發時脈決定，當累加到指定數值就歸零，此時觸發溢位中斷事件告訴系統計數完一趟了。
+  - 下數方式：從 TIMx_ARR 內含值往下計數一直到 0 後重新將 TIMx_ARR 值載入，觸發溢位中斷事件，如此完成一個計數週期。
+  - 中心對齊：從 0 開始上數到 ( TIMx_ARR — 1 ) 此時觸發溢位中斷事件，然後往下數到 1 觸發溢位中斷事件，最後再從 0 開始新的計數週期。
+
+- 計算時間就是這三項要素：**Timer 時脈頻率**、**分頻係數**、**計數上限**。
+
+    ```
+    例如要得到 1 秒鐘我們可以這樣設定：分頻係數 36000，計數上限 2000，
+
+    72 MHz / 36000 = 2000 Hz ， 2000 Hz 頻率換算成週期就是 1 / 2000 = 0.5 ms。
+
+    每 0.5 ms 踢一下計數器那麼踢 2000 下就是 0.5m * 2000 = 1000 ms = 1 s。踢完 2000 下耗時 1 秒。
+    ```
+
+<h3 id="4.1.2">HAL 函式庫</h3>
+
+```C
+HAL_TIM_Base_Start(&htim2)                  /*啟動計時器*/
+HAL_TIM_Base_Stop(&htim2)                   /*停止計時器*/
+__HAL_TIM_GET_COUNTER (&htim2)              /*讀取計數器內容值*/
+__HAL_TIM_SET_COUNTER (&htim2 , value)      /*設定計數器內容值*/
+```
+
+**實作**
+
+- 利用 Timer 2 每隔一秒鐘改變位於 PA1 的 LED 燈狀態，使用輪詢法藉由讀取計數器內容值判斷是否達到需求時間。
+
+  1. 程式一開始我們可以利用 HAL 函式庫啟動 Timer ，其函式為 `HAL_TIM_Base_Start(htim2);`
+
+  2. 在while迴圈中撰寫主要的程式邏輯
+
+        ```C
+        if( __HAL_TIM_GetCounter(&htim2) >= 2000) // if counter >= 2000
+        {
+            HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin); // toggle LED pin
+            __HAL_TIM_SET_COUNTER(&htim2, 0);  // set counter as 0
+        }
+        ```
+
+<h2 id="4.2">Interrupt</h2>
+
+[Reference](https://medium.com/%E9%96%B1%E7%9B%8A%E5%A6%82%E7%BE%8E/stm32-07-timer-interrupt-937c104cc441)
+
+- 利用 Timer 觸發**中斷**事件比**輪詢 ( polling )** 更加方便
+
+- 計時器中斷可以讓程序不需要反覆檢查時間而是讓時間到了自動告訴微處理器該做什麼動作
+
+- 計時器中斷常見作法便是利用「**計時器溢位**」來達成目的
+
+<h3 id="4.2.1">HAL 函式庫</h3>
+
+- STM32 設定中斷後若發生中斷事件會呼叫 **IRQHandler** 函式進入中斷程序，可以在此程序撰寫發生中斷後要做的事，這裡很特別的是在完成中斷程序後會再呼叫 Callback 函式後才會回到主程式
+
+- 發生中斷會先呼叫 **IRQHandler** 再呼叫 **Callback** 一共兩項程序
+
+- 該把中斷程序放在哪兒呢 ?
+  - 答案是，皆可。因為一但進入中斷程序 IRQHandler 與 Callback 都會先後被呼叫
+
+```C
+HAL_TIM_Start_IT(&htim2)                                        /*開啟計時器 Timer2 中斷*/
+HAL_TIM_IRQHandler(&htim2)                                      /*Timer2 中斷函式*/
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef \*htim)    /*計數器溢位 Callback 函式*/
+```
+
+**實作**
+
+- 在 src 目錄下可以看到 **stm32f1xx_it.c** 這個檔案掌管中斷
+
+- 找到 `void TIM2_IRQHandler(void)` 這個函式，裏頭有一個名為 `HAL_TIM_IRQHandler(&htim2)` 的函式，這個就是 Timer 2 發生中斷後程序就會進來這裡
+
+    ![STM32_img00](./doc/Function_STM32/Timer/STM32_img00.PNG)
+
+- 關於 Timer 的相關函式都在 **stm32f1xx_hal_tim.h/.c** 這裡，往下找到 `Callbacks functions`
+
+    ![STM32_img01](./doc/Function_STM32/Timer/STM32_img01.PNG)
+
+- 把它選起來後複製到 **main.c** 主程式底下的 /* USER CODE BEGIN 4 */ 區段內。
+
+- 可以在這裡面撰寫中斷後的程序， 計數器發生溢位中斷後會呼叫HAL_TIM_PeriodElapsedCallback
+
+- 可以把開關 LED 燈的程式敘述寫在這裡但是要注意的是 Callback 是計時器共用的函式，所以可以加個判斷式只有在 Timer 2 發生中斷才執行。
+
+    ```C
+    void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
+    {
+        if(htim == &htim2)
+            HAL_GPIO_TogglePin(LED_GPIO_Port, LED_Pin);
+    }
+    ```
+
+- 在 /* USER CODE BEGIN 2 */ 的地方寫上一段 `HAL_TIM_Base_Start_IT(&htim2);` 來啟動 Timer2 的中斷。
+
+    ```C
+    /* USER CODE BEGIN 2 */
+    HAL_TIM_Base_Start_IT(&htim2);
+    /* USER CODE END 2 */
+    ```
+
+<h2 id="4.3">Output_Compare</h2>
+
+[Reference](https://medium.com/%E9%96%B1%E7%9B%8A%E5%A6%82%E7%BE%8E/stm32-08-timer-output-compare-fa945ac1511)
+
+- **TIMx_ARR** 掌管計數週期，計數器會忠實地重複從 0 到 TIMx_ARR
+
+- 如果想要在 0 ~ TIMx_ARR 之間指定一個時間提醒微處理器做其他事情可以用輪詢的方式一直檢查計數暫存器內容，不過這樣太浪費資源了，解決之道便是 **output compare** 。
+
+- Output compare 就是在計數週期範圍內額外指定一個數值，當計數器數到該數值時便觸發相應的中斷事件，由於計數時脈是可調的因此指定一個計數值也等於指定一特定時間。
+
+- Output compare 的指定計數值由暫存器 **TIMx_CCRy** 決定 ( x 表示 Timer ，y 表示通道 )，數值必須落在 0 ~ TIMx_ARR 之間
+
+    ![STM32_img02](./doc/Function_STM32/Timer/STM32_img02.PNG)
+
+- 每一個 Timer 有 4 個輸入 / 輸出 通道，一共有 4 種狀態可以設定通道上的硬體腳位在發生比較中斷時呈現何種狀態。
+  - 保持：通道上的硬體腳位狀態不變。
+  - 高電位：通道上的硬體腳位輸出高電位。
+  - 低電位：通道上的硬體腳位輸出低電位。
+  - 翻轉：改變通道上的硬體腳位狀態，也就是 Toggle 。
+
+<h3 id="4.3.1">HAL 函式庫</h3>
+
+- 在程式中由於 STM32CubeIDE 已經自動產生相關初始化設定程式碼，剩下的只有啟動計時器。我們借助 HAL 函式庫來啟動 TIMER，在 /* USER CODE BEGIN 2*/ 區段寫下一段程式來啟動計時器。
+
+    ```C
+    /* USER CODE BEGIN 2*/
+    HAL_TIM_OC_Start(&htim2, TIM_CHANNEL_2);
+    /* USER CODE END 2*/
+    ```
+
+  - &htim2 是指啟動 TIMER 2 ，TIM_CHANNEL_2 指定 CHANNEL_2 為輸出
+
+<h2 id="4.4">PWM</h2>
+
+[Reference](https://medium.com/%E9%96%B1%E7%9B%8A%E5%A6%82%E7%BE%8E/stm32-09-timer-pwm-21d78d1a1631)
+
+- Pulse-width modulation , PWM 脈波寬度調變常見於**亮度調整**與**機械控制**，其原理是利用**數位方式模擬類比訊號**。
+
+- 在微處理器中一般都是**調整訊號開關時間**來產生 PWM 訊號，**訊號的工作週期 duty cycle** 是我們所關心的。
+
+    ![STM32_img03](./doc/Function_STM32/Timer/STM32_img03.PNG)
+
+- **數位電路沒有辦法直接輸出類比電壓於是便需要產生一個工作週期可控的數位訊號來達成目的**，例如微處理器輸出電壓最高為 3 v ，如果產生一個 duty cycle 20% 的訊號施加於 LED 燈上那麼 LED 燈上的電壓就是 3 v * 20% = 0.6 v ，依此類推增加到 duty cycle 100% 那麼 LED 燈就會得到 3 v 電壓，藉由這個方式便可以控制 LED 燈亮度。
+
+- 透過暫存器 **TIMx_ARR** 內容值決定了 **PWM 訊號的頻率**，並借助輸出比較 Output Compare 暫存器 **TIMx_CCRy** 來決定**訊號轉態時機**如此才能產生 duty cycle 與 frequency 可控的 PWM 訊號
+
+    ![STM32_img04](./doc/Function_STM32/Timer/STM32_img04.PNG)
+
+- 當計數器從 0 開始上數到比較值 TIMx_CCRy 時便輸出低態否則輸出高態，因此 **TIMx_CCRy 與 TIMx_ARR** 兩個暫存器內容之比值就是 **duty cycle** 了
+
+<h3 id="4.4.1">HAL 函式庫</h3>
+
+```C
+/*HAL_TIM_PWM_Start( Timer 編號 , 輸出通道編號 ) 開啟計時器*/
+HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);                   /*開啟 Timer 2 並且由通道 2 輸出訊號*/
+/*HAL_TIM_PWM_Stop( Timer 編號 , 輸出通道編號 ) 關閉計時器*/
+HAL_TIM_PWM_Stop(&htim2, TIM_CHANNEL_2);
+/*__HAL_TIM_SET_COMPARE ( Timer 編號 , 輸出通道編號 , 新比較值 ) 設定比較值*/
+__HAL_TIM_SET_COMPARE(&htim2, TIM_CHANNEL_2, 500);          /*指定 Timer 2 的通道 2 當中的比較值為 500，比較值也可以是變數*/
+/*__HAL_TIM_GET_COMPARE ( Timer 編號 , 輸出通道編號 ) 得到目前的比較值*/
+int value = __HAL_TIM_GET_COMPARE(&htim2, TIM_CHANNEL_2);   /*取得 Timer 2 通道 2 目前設定的比較值並放在變數 value 裡*/
+```
+
+**實作**
+
+- 由於 STM32CubeIDE 已經自動產生相關初始化設定程式碼，剩下的只有啟動計時器。我們借助 HAL 函式庫來啟動 TIMER，在 /* USER CODE BEGIN 2*/ 區段寫下一段程式來啟動計時器。
+
+    ```C
+    /* USER CODE BEGIN 2*/
+    HAL_TIM_PWM_Start(&htim2, TIM_CHANNEL_2);
+    /* USER CODE END 2*/
+    ```
+
+  - &htim2 是指啟動 TIMER 2 ，TIM_CHANNEL_2 指定 CHANNEL_2 為輸出
+
+<h2 id="4.5">Input_Capture</h2>
+
+[Reference](https://medium.com/%E9%96%B1%E7%9B%8A%E5%A6%82%E7%BE%8E/stm32-10-timer-input-capture-b2496dfbc3ec)
+
+- Timer Input Capture 輸入捕捉是用來**測試待測訊號的頻率與工作週期**，一般情況下待測訊號具有週期性因此我們只要知道訊號的**上升緣 ( Rising edge )** 與**下降緣 ( Falling edge )** 之間的間隔就可以推算出該訊號的週期與脈波寬度
+
+- 觸發捕捉後當下的計數器內容值會複製到 **TIMx_CCRy** 暫存器中，這個就是時間戳記，如此便完成一次邊緣偵測捕捉
+
+    ![STM32_img05](./doc/Function_STM32/Timer/STM32_img05.PNG)
 
 
 
