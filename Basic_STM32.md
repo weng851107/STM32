@@ -7,10 +7,12 @@
   - [STM32與Arduino的差異](#1.1)
     - [單晶片](#1.1.1)
   - [STM32 命名方法](#1.2)
+  - [Note for STM32](#1.3)
 - [STM32CubeIDE安裝以及環境設定](#2)
   - [CubeIDE簡介](#2.1)
   - [下載+安裝流程](#2.2)
   - [IDE閱覽](#2.3)
+  - [Note for IDE](#2.4)
 - [使用STM32CubeIDE](#3)
   - [程式碼導讀](#3.1)
   - [好用小工具 - 現場表達式 (live expression)](#3.2)
@@ -126,6 +128,13 @@
 
   - Code size - 快閃記憶體(Flash memory)大小
 
+<h2 id="1.3">Note for STM32</h2>
+
+為什麼會有RAM1和RAM2？
+
+- 為了能快速訪問數據，DMA和CUP可以分別同時訪問RAM1和RAM2，提高讀取數據的速度。
+
+
 <h1 id="2">STM32CubeIDE安裝以及環境設定</h1>
 
 <h2 id="2.1">CubeIDE簡介</h2>
@@ -163,6 +172,12 @@
 - 如果開啟後沒有出現可以從上面Window -> Short View -> Project Elplorer打開這個小視窗，其他有些視窗如果不小心手殘被關掉，也可以在這裡打開畫面右邊和底下是程式碼大綱以及一些監控視窗
 
     ![STM32_img04](./doc/Basic_STM32/STM32CubeIDE安裝/STM32_img04.jpg)
+
+<h2 id="2.4">Note for IDE</h2>
+
+### 設定 stm32cubeide 的 debug mode 產生 firmware binary
+
+![img00](./doc/Basic_STM32/image/img00.PNG)
 
 <h1 id="3">使用STM32CubeIDE</h1>
 
@@ -216,7 +231,7 @@
 
     ![STM32_img01](./doc/Basic_STM32/使用STM32CubeIDE/STM32_img01.jpg)
 
-- 非常重要!!!這個時候你的程式碼還沒有開始執行，需要**按F8才會開始執行**
+- 非常重要!!!這個時候你的程式碼還沒有開始執行，停在main()前面，需要**按F8(resume)才會開始執行**
 
 **實際使用看看這個功能：**
 
