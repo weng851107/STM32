@@ -680,6 +680,22 @@ https://www.twblogs.net/a/5d52ad86bd9eee541c31686d
   2. 在main中第一次調用接收中斷函數
   3. 進入接收中斷，接收完數據  進入中斷回調函數
   4. 修改HAL_UART_RxCpltCallback中斷回調函數，處理接收的數據
+
+    ```C
+
+    void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+    {
+        /* Prevent unused argument(s) compilation warning */
+        UNUSED(huart);
+
+        if(huart->Instance==USART2)//判断，如果是串口2
+        {
+
+                //在这里写入自己要实现的代码
+        }
+    }
+    ```
+
   5. 回調函數中要調用一次HAL_UART_Receive_IT函數，使得程序可以重新觸發接收中斷
 
 <h1 id="4">Timer</h1>

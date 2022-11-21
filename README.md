@@ -30,6 +30,19 @@ STM32CubeIDE如何試調
 
 - STM32 Uart接至 Ambarella SoC Uart：STM32 Uart送，用Ambarella SoC Uart去接，顯示在TeraTerm
 
+GPIO state 設置
+
+- high
+- low
+- high impedance: means that the stm32 microcontroller won't be trying to drive the pin either high or low.
+  - 設為input + No Pull
+
+    ```C
+    GPIO_InitStruct.Pin = GPIO_PIN_12; 
+    GPIO_InitStruct.Mode = GPIO_MODE_INPUT; 
+    GPIO_InitStruct.Pull = GPIO_NOPULL;
+    ```
+
 <h1 id="1">Basic_STM32</h1>
 
 [Basic_STM32.md](./Basic_STM32.md)
