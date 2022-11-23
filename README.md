@@ -30,6 +30,10 @@ STM32CubeIDE如何試調
 
 - STM32 Uart接至 Ambarella SoC Uart：STM32 Uart送，用Ambarella SoC Uart去接，顯示在TeraTerm
 
+  - [stm32_uart.py](./code/stm32_uart.py)：Tx完接收之後的RX
+  - [stm32_uart_rx.py](./code/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.py](./code/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx
+
+
 GPIO state 設置
 
 - high

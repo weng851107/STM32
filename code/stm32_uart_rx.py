@@ -6,6 +6,7 @@ import time
 import serial
 
 import sys
+import os
 
 PORT="/dev/ttyS1"
 BAUDRATE=115200
@@ -13,9 +14,16 @@ BAUDRATE=115200
 # global variable
 ser = None
 
+mutex = threading.Lock()
+
 def init_serial():
 	global ser
-	
+	global mutex
+
+	mutex.acquire()
+	os.system("echo 0 > /tmp/.stm32_uart_flag")
+	mutex.release()
+
 	'''
 	## comment out this code for tx during rx
 	'''
@@ -39,9 +47,16 @@ class SerialPortReadThread(threading.Thread):
 		self.ser.flushOutput()
 
 	def run(self):
+		global mutex
 		while True:
-			resp = self.ser_readline()
-			print(resp[:-1])
+			mutex.acquire()
+			fp = os.popen("cat /tmp/.stm32_uart_flag")
+			flag = fp.read()
+			fp.close()
+			mutex.release()
+			if '0' in flag:
+				resp = self.ser_readline()
+				print(resp[:-1])
 
 	def ser_write(self, cmd):
 		self.ser.write(cmd.encode())
