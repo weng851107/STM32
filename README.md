@@ -30,9 +30,9 @@ STM32CubeIDE如何試調
 
 - STM32 Uart接至 Ambarella SoC Uart：STM32 Uart送，用Ambarella SoC Uart去接，顯示在TeraTerm
 
-  - [stm32_uart.py](./code/stm32_uart.py)：Tx完接收之後的RX
-  - [stm32_uart_rx.py](./code/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.py](./code/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx
-  - [stm32_uart_rx.c](./code/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.c](./code/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx，但目前Rx會掉字，尚未處理，大致用法已完成
+  - [stm32_uart.py](./code/uart/stm32_uart.py)：Tx完接收之後的RX
+  - [stm32_uart_rx.py](./code/uart/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.py](./code/uart/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx
+  - [stm32_uart_rx.c](./code/uart/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.c](./code/uart/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx，但目前Rx會掉字，尚未處理，大致用法已完成
 
 GPIO state 設置
 
@@ -46,6 +46,15 @@ GPIO state 設置
     GPIO_InitStruct.Mode = GPIO_MODE_INPUT; 
     GPIO_InitStruct.Pull = GPIO_NOPULL;
     ```
+
+調配Zoom馬達，Focus馬達會自動對焦
+
+- 透過Python把motor trace設置為struct的形式
+
+    [README](./code/excel/README)
+
+    [get_data_from_excel.py](./code/excel/get_data_from_excel.py)
+
 
 <h1 id="1">Basic_STM32</h1>
 

@@ -1,0 +1,100 @@
+# 利用Python的Pandas套件
+
+## 安裝套件
+
+Python的Pandas套件
+
+```bash
+pip install pandas
+```
+
+操作Excel的相依性套件openpyxl
+
+```bash
+pip install openpyxl
+```
+
+## 讀取Excel檔案的資料
+
+利用read_excel()方法(Method)
+
+```python
+import pandas as pd
+ 
+df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx")
+print(df)
+```
+
+讀取特定的工作表(sheet)
+
+```python
+import pandas as pd
+ 
+df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx", sheet_name="2019")
+# df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx", sheet_name=["2018", "2019"])
+print(df)
+```
+
+讀取某些欄位(column)的資料內容
+
+- 可以使用usecols關鍵字參數來指定所要選取的「欄位標題」、「索引值」或「欄位名稱」
+
+    ```python
+    import pandas as pd
+    
+    # 指定欄位標題
+    df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx",
+                        sheet_name="2019",
+                        usecols=["年別", "細分", "合計"])
+    
+    # 指定欄位索引值
+    # df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx",
+    #                      sheet_name="2019",
+    #                      usecols=[0, 3, 17])
+    
+    # 指定欄位名稱
+    # df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx",
+    #                      sheet_name="2019",
+    #                      usecols="A, D, R")
+
+    # 選取範圍欄位名稱
+    # df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx",
+    #                     sheet_name="2019",
+    #                     usecols="A, D, F:R")
+    print(df)
+    ```
+
+利用nrows關鍵字參數，來指定所要讀取的列(row)數量
+
+```python
+import pandas as pd
+ 
+# 讀取前20列資料
+df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx",
+                     sheet_name="2019",
+                     nrows=21)
+print(df)
+```
+
+- 選取Excel檔中，特定列(row)的資料時，使用Pandas DataFrame的「[]」符號來範圍選取所需的列(row)資料
+
+    ```python
+    import pandas as pd
+    
+    # 讀取2012年的列資料
+    df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx")
+    new_df = df[0:287]  # 索引值0~286的列資料
+    print(new_df)
+    ```
+
+讀取Excel某儲存格資料：使用at或iat屬性(Property)來進行儲存格的定位
+
+```python
+import pandas as pd
+ 
+df = pd.read_excel("歷年國內主要觀光遊憩據點遊客人數月別統計.xlsx")
+d2 = df.at[0, "細分"]  # 讀取D2儲存格的值(以列索引值及欄位標題來定位)
+# d2 = df.iat[0, 3]  # 讀取D2儲存格的值(以列索引值及欄索引值來定位)
+print(d2)  #陽明山遊客中心
+```
+
