@@ -32,7 +32,7 @@ STM32CubeIDE如何試調
 
   - [stm32_uart.py](./code/stm32_uart.py)：Tx完接收之後的RX
   - [stm32_uart_rx.py](./code/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.py](./code/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx
-
+  - [stm32_uart_rx.c](./code/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.c](./code/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx，但目前Rx會掉字，尚未處理，大致用法已完成
 
 GPIO state 設置
 

@@ -43,6 +43,9 @@ def _main():
 
 		__cmd = input("input:")
 
+		if 'q' in __cmd and len(__cmd) == 1:
+			break
+
 		if ser != None:
 			cmd = "CMD:" + str(__cmd) + "~END"
 			print("cmd = ", cmd)
