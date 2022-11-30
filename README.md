@@ -34,6 +34,10 @@ STM32CubeIDE如何試調
   - [stm32_uart_rx.py](./code/uart/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.py](./code/uart/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx
   - [stm32_uart_rx.c](./code/uart/stm32_uart_rx.py)：一個程序在Rx, [stm32_uart_tx.c](./code/uart/stm32_uart_tx.py)：另一個程序在Tx，透過mutex且判斷某file數值作為是否在Tx，Tx時disable Rx，但目前Rx會掉字，尚未處理，大致用法已完成
 
+STM32CubeMonitor試調
+
+- 基本變數試調: [新一代神器STM32CubeMonitor介紹、下載、安裝和使用教程](https://www.twblogs.net/a/5e6c165dbd9eee211685f5b5)
+
 GPIO state 設置
 
 - high
