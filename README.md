@@ -59,6 +59,11 @@ GPIO state 設置
 
     [get_data_from_excel.py](./code/excel/get_data_from_excel.py)
 
+STM32 ST-LINK Utility
+
+- [STM32 ST-LINK Utility介紹、下載、安裝、使用方法](https://blog.csdn.net/ybhuangfugui/article/details/52597133)
+- 作為燒錄器，下載程序（可執行hex文件）
+- 可以快速讀取FLASH數據外，還可快速讀取STM32芯片型號、ID、版本等信息
 
 <h1 id="1">Basic_STM32</h1>
 
